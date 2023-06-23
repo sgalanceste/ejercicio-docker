@@ -1,0 +1,53 @@
+version: '3'
+services:
+  web:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - ./app:/var/www/html
+    environment:
+      - MYSQL_HOST=db
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=secret
+    networks:
+      mynetwork:
+        ipv4_address: 172.20.0.2
+    depends_on:
+      - db
+    restart: always
+    hostname: web.localtest.me
+  db:
+    image: mysql:5.7
+    environment:
+      - MYSQL_ROOT_PASSWORD=secret
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      mynetwork:
+        ipv4_address: 172.20.0.3
+    restart: always
+    hostname: db.localtest.me
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - web
+    networks:
+      mynetwork:
+        ipv4_address: 172.20.0.4
+    restart: always
+    hostname: nginx.localtest.me
+networks:
+  mynetwork:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/24
+volumes:
+  db_data:
